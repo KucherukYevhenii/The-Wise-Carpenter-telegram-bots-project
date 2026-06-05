@@ -28,6 +28,8 @@ async def main():
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, stop_event.set)
 
+    await start_dummy_server()
+    
     task1 = asyncio.create_task(user_main())
     task2 = asyncio.create_task(admin_main())
 
