@@ -14,5 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Копіюємо всі інші файли проєкту в контейнер
 COPY . .
 
+EXPOSE 8080
+
 # Команда для запуску вашого файлу
 CMD ["python", "run.py"]

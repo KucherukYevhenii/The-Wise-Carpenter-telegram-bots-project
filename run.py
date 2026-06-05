@@ -1,7 +1,25 @@
 import asyncio
 import signal
+import os
+from aiohttp import web
 from bots.user_bot.main import main as user_main
 from bots.admin_bot.main import main as admin_main
+
+
+async def health_check(request):
+    return web.Response(text="Bots are running 24/7!")
+
+async def start_dummy_server():
+    app = web.Application()
+    app.router.add_get('/', health_check)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    
+    # Платформа може сама вказувати порт через змінні оточення, або беремо 8080
+    port = int(os.environ.get("PORT", 8080))
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    print(f"Фейковий сервер запущено на порту {port}")
 
 async def main():
     loop = asyncio.get_running_loop()
