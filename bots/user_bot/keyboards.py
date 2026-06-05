@@ -12,31 +12,8 @@ lang_kb = InlineKeyboardMarkup(inline_keyboard=[
     ]
 ])
 
-# --- Кнопки для отримання інформації про користувача
-def get_role_kb(lang: str) -> InlineKeyboardMarkup:
-    roles = {
-        "ua": [
-            ("Хочу записати сина в майстерню", "role:parent"),
-            ("Цікавлюсь рухом", "role:interested"),
-            ("Хочу відкрити майстерню", "role:founder")
-        ],
-        "en": [
-            ("Enroll my son in a workshop", "role:parent"),
-            ("Interested in the movement", "role:interested"),
-            ("Want to open a workshop", "role:founder")
-        ]
-    }
-    
-    current_roles = roles.get(lang, roles["ua"])
-    
-    keyboard = []
-    for text, callback_data in current_roles:
-        keyboard.append([InlineKeyboardButton(text=text, callback_data=callback_data)])
-        
-    return InlineKeyboardMarkup(inline_keyboard=keyboard)
-
-
 # --- Кнопка для запиту телефону ---
+
 def get_phone_number_kb_reg(user_lang:str):
     if user_lang not in reg:
         user_lang = lang.ENGLISH_RETURN.value

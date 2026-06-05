@@ -5,7 +5,6 @@ class Registration(StatesGroup):
     choosing_language = State()  # вибір мови
     entering_name = State()     # введення імені
     entering_phone = State()    # введення номеру телефона
-    choosing_role = State()
 
 
 class SettingsStates(StatesGroup):
