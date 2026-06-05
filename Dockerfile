@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 8080
 
 # Команда для запуску вашого файлу
-CMD ["python", "run.py"]
+CMD sh -c "alembic upgrade head && python run.py"

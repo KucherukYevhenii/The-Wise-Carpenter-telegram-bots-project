@@ -42,7 +42,7 @@ class Settings(BaseSettings):
         """
         Буде повертати посилання для підключення до Redis
         """
-        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
+        return f"rediss://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
     
     @property
     def superadmin_list(self) -> list[str]:  
