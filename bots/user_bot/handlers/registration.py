@@ -7,7 +7,7 @@ from typing import Union
 
 from database.models import User  
 from bots.user_bot.states import Registration
-from bots.user_bot.keyboards import lang_kb, get_phone_number_kb_reg
+from bots.user_bot.keyboards import lang_kb, get_phone_number_kb_reg, get_role_kb
 from locales.texts import registration_phrases as reg_txt
 
 router = Router()
@@ -30,7 +30,7 @@ async def cmd_start(message: types.Message, state: FSMContext, session: AsyncSes
     await message.answer(reg_txt["start"], reply_markup=lang_kb)
     await state.set_state(Registration.choosing_language)
 
-# --- Етап 2: Введення імені ---
+# --- Етап 2: Обробка мови та мети ---
 @router.callback_query(Registration.choosing_language)
 async def language_chosen(callback: types.CallbackQuery, state: FSMContext):
     # Очищуємо callback_data від префіксів (наприклад, якщо там lang:ua чи set_lang:ua)
@@ -42,7 +42,27 @@ async def language_chosen(callback: types.CallbackQuery, state: FSMContext):
         
     await state.update_data(chosen_lang=lang_code)
 
-    await callback.message.edit_text(reg_txt[lang_code]["name_set"])
+    # await callback.message.edit_text(reg_txt[lang_code]["name_set"])
+    # await state.set_state(Registration.entering_name)
+    # await callback.answer()
+
+    text = "Оберіть, що вас цікавить найбільше:" if lang_code == "ua" else "Choose what interests you the most:"
+    await callback.message.edit_text(text, reply_markup=get_role_kb(lang_code))
+    
+    await state.set_state(Registration.choosing_role)
+    await callback.answer()
+
+# --- Етап 2.5: Проміжковий інтерактив (Без збереження в БД) ---
+@router.callback_query(Registration.choosing_role, F.data.startswith("role:"))
+async def role_chosen(callback: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    lang_code = data.get("chosen_lang", "ua")
+
+    # Робимо плавний і теплий перехід до запиту імені
+    friendly_prefix = "Чудово! Раді вітати вас у нашій спільноті.\n\n" if lang_code == "ua" else "Awesome! Welcome to our community.\n\n"
+    
+    # Виводимо стандартний запит імені, але з дружнім префіксом
+    await callback.message.edit_text(friendly_prefix + reg_txt[lang_code]["name_set"])
     await state.set_state(Registration.entering_name)
     await callback.answer()
 
