@@ -4,7 +4,9 @@ from config import settings
 # Створення двигуна
 engine = create_async_engine(
     url=settings.database_url,
-    echo=False
+    echo=False,
+    pool_pre_ping=True,  # Перевіряє "пульс" бази перед запитом
+    pool_recycle=300     # Оновлює з'єднання кожні 5 хвилин
 )
 
 # Створення сесій
