@@ -29,7 +29,7 @@ communication between the team and users.
 ```bash
    pip install -r requirements.txt
 ```
-3. Copy `env.example` to `.env` and fill in the values
+3. Copy `env_example` to `.env` and fill in the values
 4. Run migrations:
 ```bash
    alembic upgrade head
