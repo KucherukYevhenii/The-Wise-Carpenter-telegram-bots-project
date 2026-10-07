@@ -61,6 +61,34 @@ general_info = {
     }
 }
 
+# головне меню користувача
+main_menu_phrases = {
+    "ua": {
+        "welcome":            "Вітаємо, {name}!\n\nОберіть розділ:",
+        "btn_workshops":      "Майстерні",
+        "btn_start_workshop": "Відкрити майстерню",
+        "btn_mobile":         "Мобільна майстерня",
+        "btn_info":           "Загальна інформація",
+        "btn_faq":            "Найчастіші питання",
+        "btn_questions":      "Задати питання",
+        "btn_settings":       "Налаштування",
+        "btn_main_menu":      "Головне меню",
+        "not_registered":     "Спершу пройдіть реєстрацію: натисніть /start",
+    },
+    "en": {
+        "welcome":            "Welcome, {name}!\n\nSelect a section:",
+        "btn_workshops":      "Workshops",
+        "btn_start_workshop": "Open a workshop",
+        "btn_mobile":         "Mobile workshop",
+        "btn_info":           "General information",
+        "btn_faq":            "FAQ",
+        "btn_questions":      "Ask a question",
+        "btn_settings":       "Settings",
+        "btn_main_menu":      "Main menu",
+        "not_registered":     "Please register first: press /start",
+    }
+}
+
 # --- Фрази для налаштувань ч1---
 settings_phrases = {
     "ua":{
@@ -173,7 +201,8 @@ workshop_phrases = {
         "list_lvl": "списку",
         "leader": "Лідер",
         "address": "Адреса",
-        "phone": "Телефон"
+        "phone": "Телефон",
+        "church_name":"Церква"
     },
     "en": {
         "label":"The Wise Carpenter's workshops",
@@ -189,7 +218,8 @@ workshop_phrases = {
         "list_lvl": "list",
         "leader": "Leader",
         "address": "Address",
-        "phone": "Phone"
+        "phone": "Phone",
+        "church_name":"Church"
     }
 }
 

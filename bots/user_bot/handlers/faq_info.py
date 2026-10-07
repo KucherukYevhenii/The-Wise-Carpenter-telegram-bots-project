@@ -6,11 +6,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Union
 
 from database.models import User, FAQQuestion
-from bots.user_bot.keyboards import get_faq_categories_kb, get_faq_questions_kb
+from bots.user_bot.keyboards import get_faq_categories_kb, get_faq_questions_kb, get_back_kb, h
 
 from locales.texts import general_info as gen
 
 router = Router()
+
+async def unh_category(session: AsyncSession, lang: str, value_hash: str):
+    """Повертає назву категорії FAQ за її хешем (callback_data обмежена 64 байтами)."""
+    res = await session.execute(select(distinct(FAQQuestion.category)).where(FAQQuestion.language == lang))
+    return next((c for c in res.scalars() if h(c) == value_hash), None)
 
 async def get_lang(user_id: int, session: AsyncSession):
     res = await session.execute(select(User.language).where(User.telegram_id == user_id))
@@ -18,21 +23,34 @@ async def get_lang(user_id: int, session: AsyncSession):
 
 # --- 1. Початок: Список категорій ---
 @router.message(Command("faq"))
-async def cmd_faq(message: types.Message, session: AsyncSession):
+@router.callback_query(F.data == "menu:faq")
+async def cmd_faq(event: Union[types.Message, types.CallbackQuery], session: AsyncSession):
     """Функція для знаходження категорій FAQ"""
-    lang = await get_lang(message.from_user.id, session)
+    lang = await get_lang(event.from_user.id, session)
     
     # Отримуємо унікальні категорії для мови, відсортовані за алфавітом
     stmt = select(distinct(FAQQuestion.category)).where(FAQQuestion.language == lang).order_by(asc(FAQQuestion.category))
     res = await session.execute(stmt)
     categories = res.scalars().all()
     
-    if not categories:
-        await message.answer(gen[lang].get('no_info'))
-        return
-    
-    text = f"<b>{gen[lang].get('faq_label')}</b>\n{gen[lang].get('choose_category')} ({gen[lang].get('page')} 1):"
-    await message.answer(text=text, reply_markup=get_faq_categories_kb(categories, lang), parse_mode="HTML")
+    if categories:
+        text = f"<b>{gen[lang].get('faq_label')}</b>\n{gen[lang].get('choose_category')} ({gen[lang].get('page')} 1):"
+        kb = get_faq_categories_kb(categories, lang)
+    else:
+        text = gen[lang].get('no_info')
+        kb = get_back_kb(lang, "main_menu") if isinstance(event, types.CallbackQuery) else None
+ 
+    if isinstance(event, types.CallbackQuery):
+        try:
+            await event.message.edit_text(text, reply_markup=kb, parse_mode="HTML")
+        except Exception:
+            await event.message.answer(text, reply_markup=kb, parse_mode="HTML")
+        try:
+            await event.answer()
+        except Exception:
+            pass
+    else:
+        await event.answer(text, reply_markup=kb, parse_mode="HTML")
 
 # --- 2. Пагінація категорій ---
 @router.callback_query(F.data.startswith("faq_cat_page:"))
@@ -55,11 +73,15 @@ async def process_faq_categories_pagination(callback: types.CallbackQuery, sessi
 async def show_questions_in_category(callback: types.CallbackQuery, session: AsyncSession):
     """Функція для знаходження питань в категорії"""
     parts = callback.data.split(":")
-    category = parts[1]
     # Якщо повертаємось від відповіді — витягуємо збережену сторінку, інакше за дефолтом 0
     page = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else 0
     
     lang = await get_lang(callback.from_user.id, session)
+
+    category = await unh_category(session, lang, parts[1])
+    if category is None:
+        await callback.answer(gen[lang].get('no_info'), show_alert=True)
+        return
     
     stmt = select(FAQQuestion).where(
         FAQQuestion.category == category, 
@@ -85,9 +107,14 @@ async def show_questions_in_category(callback: types.CallbackQuery, session: Asy
 @router.callback_query(F.data.startswith("faq_q_page:"))
 async def process_faq_questions_pagination(callback: types.CallbackQuery, session: AsyncSession):
     """Обробка гортання сторінок у списку запитань"""
-    _, category, page = callback.data.split(":")
+    _, category_h, page = callback.data.split(":")
     page = int(page)
     lang = await get_lang(callback.from_user.id, session)
+
+    category = await unh_category(session, lang, category_h)
+    if category is None:
+        await callback.answer(gen[lang].get('no_info'), show_alert=True)
+        return
     
     stmt = select(FAQQuestion).where(
         FAQQuestion.category == category, 
@@ -126,7 +153,7 @@ async def show_faq_answer(callback: types.CallbackQuery, session: AsyncSession):
         builder = InlineKeyboardBuilder()
         builder.button(
             text=gen[lang].get('back', 'Назад'), 
-            callback_data=f"faq_back_to_cat:{item.category}:{back_page}"
+            callback_data=f"faq_back_to_cat:{h(item.category)}:{back_page}"
         )
         
         # Редагуємо поточне повідомлення замість відправки нового спаму

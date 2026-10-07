@@ -8,6 +8,7 @@ from typing import Union
 from database.models import User  
 from bots.user_bot.states import Registration
 from bots.user_bot.keyboards import lang_kb, get_phone_number_kb_reg, get_role_kb
+from bots.user_bot.handlers.menu import send_main_menu
 from locales.texts import registration_phrases as reg_txt
 
 router = Router()
@@ -23,8 +24,8 @@ async def cmd_start(message: types.Message, state: FSMContext, session: AsyncSes
     )
     user = result.scalar_one_or_none()
     if user:
-        # Виправлено лапки з подвійних на одинарні 'start_again'
-        await message.answer(f"{reg_txt[user.language].get('start_again')}, {user.name}!")
+        await state.clear()
+        await send_main_menu(message, user.language, user.name)
         return
     
     await message.answer(reg_txt["start"], reply_markup=lang_kb)
@@ -117,3 +118,5 @@ async def phone_entered(message: types.Message, state: FSMContext, session: Asyn
         reg_txt[lang].get("registrated_successfully"), 
         reply_markup=types.ReplyKeyboardRemove()
     )
+    # Одразу показуємо головне меню
+    await send_main_menu(message, lang, data['user_name'])

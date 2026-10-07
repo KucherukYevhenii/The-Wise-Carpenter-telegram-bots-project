@@ -36,7 +36,7 @@ async def cmd_general_info(event: Union[types.Message, types.CallbackQuery], ses
         if isinstance(event, types.Message):
             await event.answer(text)
         else:
-            await event.message.edit_text(text)
+            await event.message.edit_text(text, reply_markup=get_back_kb(lang, "main_menu"))
         return
 
     # Виправлено подвійні лапки на одинарні 'general_info_label', 'choose_category', 'page'

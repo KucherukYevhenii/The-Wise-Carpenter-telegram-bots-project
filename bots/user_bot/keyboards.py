@@ -1,9 +1,14 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from locales.texts import registration_phrases as reg, Languages as lang, general as gen, texts_settings as sett, questions_phrases as qst, status_phrases as sts, start_workshop_phrases as sw_phrases, mobile_workshop_phrases
+from locales.texts import main_menu_phrases as mm, registration_phrases as reg, Languages as lang, general as gen, texts_settings as sett, questions_phrases as qst, status_phrases as sts, start_workshop_phrases as sw_phrases, mobile_workshop_phrases
 
 from database.models import Status
+
+import hashlib
+
+def h(value) -> str:
+    return hashlib.md5(str(value).encode("utf-8")).hexdigest()[:8]
 
 lang_kb = InlineKeyboardMarkup(inline_keyboard=[
     [
@@ -11,6 +16,25 @@ lang_kb = InlineKeyboardMarkup(inline_keyboard=[
         InlineKeyboardButton(text = lang.ENGLISH.value, callback_data=lang.ENGLISH_RETURN.value)
     ]
 ])
+
+# --- Головне меню користувача ---
+def main_menu_kb(lang: str) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    L = mm[lang]
+    builder.button(text=L["btn_info"],           callback_data="info_back_to_list")
+    builder.button(text=L["btn_faq"],            callback_data="menu:faq")
+    builder.button(text=L["btn_workshops"],      callback_data="ws_countries:0")
+    builder.button(text=L["btn_start_workshop"], callback_data="questionnaire_menu")
+    builder.button(text=L["btn_mobile"],         callback_data="mobile_menu")
+    builder.button(text=L["btn_questions"],      callback_data="open_qstort")
+    builder.button(text=L["btn_settings"],       callback_data="menu:settings")
+    builder.adjust(2)
+    return builder.as_markup()
+ 
+ 
+def menu_button(lang: str) -> InlineKeyboardButton:
+    """Кнопка повернення до головного меню (додається в корінь кожного розділу)."""
+    return InlineKeyboardButton(text=mm[lang]["btn_main_menu"], callback_data="main_menu")
 
 # --- Кнопки для отримання інформації про користувача
 def get_role_kb(lang: str) -> InlineKeyboardMarkup:
@@ -75,7 +99,8 @@ def get_info_categories_kb(categories_list, user_lang: str,  page: int = 0, limi
     
     if nav_buttons:
         builder.row(*nav_buttons)
-        
+
+    builder.row(menu_button(user_lang))
     return builder.as_markup()
 
 # --- Створення кнопки назад ---
@@ -96,7 +121,7 @@ def get_faq_categories_kb(categories, user_lang: str, page: int = 0, limit: int 
     
     for cat in current_items:
         # Передаємо назву категорії в callback
-        builder.button(text=cat, callback_data=f"faq_cat:{cat}")
+        builder.button(text=cat, callback_data=f"faq_cat:{h(cat)}")
     
     builder.adjust(1)
     
@@ -109,6 +134,8 @@ def get_faq_categories_kb(categories, user_lang: str, page: int = 0, limit: int 
     
     if nav_buttons:
         builder.row(*nav_buttons)
+
+    builder.row(menu_button(user_lang))
     return builder.as_markup()
 
 # --- Створення сітки для питань в категорії FAQ ---
@@ -128,12 +155,12 @@ def get_faq_questions_kb(questions, user_lang: str, category: str, page: int = 0
     # Навігація + кнопка "Назад до категорій"
     nav_row = []
     if page > 0:
-        nav_row.append(InlineKeyboardButton(text=gen[user_lang].get("back"), callback_data=f"faq_q_page:{category}:{page-1}"))
+        nav_row.append(InlineKeyboardButton(text=gen[user_lang].get("back"), callback_data=f"faq_q_page:{h(category)}:{page-1}"))
     
     nav_row.append(InlineKeyboardButton(text=f"{gen[user_lang].get('menu')} FAQ", callback_data="faq_main")) # Повернення до списку категорій
     
     if end_offset < len(questions):
-        nav_row.append(InlineKeyboardButton(text=gen[user_lang].get("next"), callback_data=f"faq_q_page:{category}:{page+1}"))
+        nav_row.append(InlineKeyboardButton(text=gen[user_lang].get("next"), callback_data=f"faq_q_page:{h(category)}:{page+1}"))
     
     builder.row(*nav_row)
     return builder.as_markup()
@@ -157,7 +184,8 @@ def get_settings_kb(user_lang: str) -> InlineKeyboardMarkup:
     
     # Розміщуємо по одній кнопці в ряд для зручності натискання
     builder.adjust(1)
-    
+
+    builder.row(menu_button(user_lang))
     return builder.as_markup()
 
 def get_lang_settings_kb(user_lang: str) -> InlineKeyboardMarkup:
@@ -214,6 +242,8 @@ def get_qstort_main_kb(lang: str) -> InlineKeyboardMarkup:
     # builder.button(text=f {gen[lang].get('menu', 'Menu')}", callback_data="main_menu")
     
     builder.adjust(1) # Кнопки одна під одною
+
+    builder.row(menu_button(lang))
     return builder.as_markup()
 
 
@@ -294,7 +324,7 @@ def get_workshop_nav_kb(lang, items, current_prefix, next_prefix,  back_steps, p
         if hasattr(item, 'workshop_id'): # Якщо це об'єкт Workshop
             builder.button(text=f"{item.church_name}", callback_data=f"ws_view:{item.workshop_id}")
         else: # Якщо це рядок (Країна/Регіон/Місто)
-            builder.button(text=str(item), callback_data=f"{next_prefix}:{item}:0")
+            builder.button(text=str(item), callback_data=f"{next_prefix}:{h(item)}:0")
     
     builder.adjust(1)
 
@@ -330,6 +360,7 @@ def get_q_main_kb(lang, has_draft: bool) -> InlineKeyboardMarkup:
     # builder.button(text=f"{gen[lang]['back']}", callback_data="main_menu")
     
     builder.adjust(1)
+    builder.row(menu_button(lang))
     return builder.as_markup()
 
 # --- система заповнення анкети ---
@@ -394,6 +425,8 @@ def get_mq_main_kb(lang, has_draft: bool) -> InlineKeyboardMarkup:
         builder.button(text=p['continue_form'], callback_data="mq_continue")
     builder.button(text=p['form_archive'], callback_data="mq_archive")
     builder.adjust(1)
+
+    builder.row(menu_button(lang))
     return builder.as_markup()
 
 # --- sistema заповнення анкети ---

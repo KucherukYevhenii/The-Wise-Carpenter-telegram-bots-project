@@ -45,6 +45,14 @@ async def show_settings_menu(event: Union[types.Message, types.CallbackQuery], s
 async def cmd_settings(message: types.Message, session: AsyncSession):
     await show_settings_menu(message, session)
 
+@router.callback_query(F.data == "menu:settings")
+async def cb_settings_from_menu(callback: types.CallbackQuery, session: AsyncSession):
+    await show_settings_menu(callback, session)
+    try:
+        await callback.answer()
+    except Exception:
+        pass
+
 @router.callback_query(F.data == "settings_back")
 async def settings_back_handler(callback: types.CallbackQuery, state: FSMContext, session: AsyncSession):
     data = await state.get_data()

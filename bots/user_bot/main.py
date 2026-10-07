@@ -10,7 +10,7 @@ from aiogram.types import ErrorEvent
 from redis.asyncio import Redis
 
 from bots.user_bot.middleware import DbSessionMiddleware
-from bots.user_bot.handlers import registration, info,faq_info, settings as sett, questions, workshops, questionnaire, mobile_questionnaire
+from bots.user_bot.handlers import menu, registration, info,faq_info, settings as sett, questions, workshops, questionnaire, mobile_questionnaire
 
 async def main():
     # Налаштування логування
@@ -31,6 +31,7 @@ async def main():
     dp.update.middleware(DbSessionMiddleware(session_pool=async_session))
 
     # підключення Функцій
+    dp.include_router(menu.router)
     dp.include_router(registration.router)
     dp.include_router(info.router)
     dp.include_router(faq_info.router)
